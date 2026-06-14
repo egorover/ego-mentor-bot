@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  ego-mentor-bot:
+    build: .
+    container_name: ego-mentor-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./knowledge_base.xlsx:/app/knowledge_base.xlsx
+      - ./logs:/app/logs
+    networks:
+      - ego-mentor-network
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: ego-mentor-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - ego-mentor-network
+    command: redis-server --appendonly yes
+
+volumes:
+  redis-data:
+
+networks:
+  ego-mentor-network:
+    driver: bridge
